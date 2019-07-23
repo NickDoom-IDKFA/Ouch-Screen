@@ -1,0 +1,4 @@
+Ouch!Screen: a tiny utility allowing to use PocketBook 6xx with damaged/disabled touchscreen.
+It's a simple file manag... "file opener" allowing to open a file without TS.
+Attach your PocketBook to a PC, open it as an external disk drive, manually change configuration files according to your preferences (font size, soft sleep mode etc; Ouch!Screen does not have such functionality) and put Ouch!Screen .app into the proper folder (it'll most probably be "system/bin/bookshelf.app" on either internal or MicroSD drive of your device).
+Ouch!Screen will run on next power-up, replacing the default file manager and allowing to select a book and open it (you actually don't need anything else to read books because the internal reader can be used without TS).

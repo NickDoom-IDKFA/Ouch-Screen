@@ -9,10 +9,11 @@
 
 #define FONTSCALE 2	//ToDo: use the config api to make it customizable. Supported values: 1, 2, 3, 4.
 #define FILESPERPAGE (64/FONTSCALE)	//Code is prepared for a variable, not a def, so other code is ready for this.
+#define SHIFT_SELECTED 10
 
 extern const ibitmap background;
 
-ifont *listfont, *smallfont;
+ifont *listfont, *smallfont, *boldfont;
 
 int cursor=0, files=2;	//Current cursor position and total file number in the current dir;
 char curfile[2048]="/mnt/ext1";	//Selected file/dir name (currently under the cursor);
@@ -40,12 +41,17 @@ void ListFiles()	//Optimized for solid-state drives (no time penalty for actuall
 	{
 		if (cursor<1)
 		{
-			DrawTextRect( 10,                            0, 590, FONTSCALE*12, "E-Book Inner Memory", ALIGN_LEFT);
-			DrawTextRect(  0,  FONTSCALE*12, 590, FONTSCALE*12, "MicroSD Card", ALIGN_LEFT);
+            SetFont(boldfont, BLACK);
+            DrawTextRect( SHIFT_SELECTED,                            0, ScreenWidth()-SHIFT_SELECTED, FONTSCALE*12, "E-Book Inner Memory", ALIGN_LEFT);
+            SetFont(listfont, BLACK);
+            DrawTextRect(  0,  FONTSCALE*12, ScreenWidth(), FONTSCALE*12, "MicroSD Card", ALIGN_LEFT);
 			strcpy (curfile,"/mnt/ext1");
 		} else {
-			DrawTextRect(  0,                              0, 590, FONTSCALE*12, "E-Book Inner Memory", ALIGN_LEFT);
-			DrawTextRect( 10,  FONTSCALE*12, 590, FONTSCALE*12, "MicroSD Card", ALIGN_LEFT);
+            SetFont(listfont, BLACK);
+            DrawTextRect(  0,                              0, ScreenWidth(), FONTSCALE*12, "E-Book Inner Memory", ALIGN_LEFT);
+            SetFont(boldfont, BLACK);
+            DrawTextRect( SHIFT_SELECTED,  FONTSCALE*12, ScreenWidth()-SHIFT_SELECTED, FONTSCALE*12, "MicroSD Card", ALIGN_LEFT);
+            SetFont(listfont, BLACK);
 			strcpy (curfile,"/mnt/ext2");
 		}
 //		FullUpdate();
@@ -74,19 +80,23 @@ void ListFiles()	//Optimized for solid-state drives (no time penalty for actuall
 		if (i==cursor)
 		{
 //			 DrawTextRect( 10,  FONTSCALE*12*(i%FILESPERPAGE), 590, FONTSCALE*12, temp, ALIGN_LEFT);
-			 DrawTextRect( 10,  FONTSCALE*12*(i%FILESPERPAGE), 590, FONTSCALE*12, dir_entry->d_name, ALIGN_LEFT);
+             SetFont(boldfont, BLACK);
+             DrawTextRect( SHIFT_SELECTED,  FONTSCALE*12*(i%FILESPERPAGE), ScreenWidth()-SHIFT_SELECTED, FONTSCALE*12, dir_entry->d_name, ALIGN_LEFT);
 			strcpy (curfile, dir_entry->d_name);
 		}
 //		else DrawTextRect(  0,  FONTSCALE*12*(i%FILESPERPAGE), 600, FONTSCALE*12, temp, ALIGN_LEFT);
-		else DrawTextRect(  0,  FONTSCALE*12*(i%FILESPERPAGE), 600, FONTSCALE*12, dir_entry->d_name, ALIGN_LEFT);
+        else {
+            SetFont(listfont, BLACK);
+            DrawTextRect(  0,  FONTSCALE*12*(i%FILESPERPAGE), ScreenWidth(), FONTSCALE*12, dir_entry->d_name, ALIGN_LEFT);
+        };
 	}
 
 	files=i;
 	closedir(path);
 
-	SetFont(smallfont, BLACK);
+    SetFont(listfont, BLACK);
 	sprintf (temp, "Page %i of %i", cursor/FILESPERPAGE+1, i/FILESPERPAGE+1);
-	DrawTextRect(  0,  785, 600, 12, temp, ALIGN_CENTER);
+    DrawTextRect(  0,  ScreenHeight() - 30, ScreenWidth(), 12, temp, ALIGN_CENTER);
 
 //	FullUpdate();
 	SoftUpdate();
@@ -95,6 +105,7 @@ void ListFiles()	//Optimized for solid-state drives (no time penalty for actuall
 int main_handler(int type, int par1, int par2)
 {
 	struct stat file_info;
+    int font_size;
 
 	if (type == EVT_INIT)		// occurs once at startup, only in main handler
 	{
@@ -102,23 +113,26 @@ int main_handler(int type, int par1, int par2)
 		switch (FONTSCALE)	//Yep, we don't need the hard-coded font size. We should create a config file instead, and put it's content into the "My computer" meta-folder (it's a bit too empty).
 		{
 			case 1:
-				listfont  = OpenFont("DroidSans", 12, 1);	//may be just " = smallfont"? Should it work?
+                font_size = 12;
+                //listfont  = OpenFont("DroidSans", 12, 1);	//may be just " = smallfont"? Should it work?
 			break;
 			case 2:
-				listfont  = OpenFont("DroidSans", 24, 1);
+                font_size = 24;
 			break;
 			case 3:
-				listfont  = OpenFont("DroidSans", 36, 1);
+                font_size = 36;
 			break;
 			case 4:
-				listfont  = OpenFont("DroidSans", 48, 1);
+                font_size = 48;
 			break;
-		}
+        };
+        listfont  = OpenFont(DEFAULTFONT, font_size, 1);
+        boldfont = OpenFont(DEFAULTFONTB, font_size, 1);
 	}
 
 	if (type == EVT_SHOW)	// occurs when this event handler becomes active
 	{
-		StretchBitmap(0, 0, 600, 800, &background, 0);
+		StretchBitmap(0, 0, ScreenWidth(), ScreenHeight(), &background, 0);
 		FullUpdate();
 	}
 
@@ -136,7 +150,7 @@ int main_handler(int type, int par1, int par2)
 				ListFiles();
 			break;
 
-			case KEY_MENU:
+            case 23:
 				strcpy (temp, curpath);
 				strcat (temp, curfile);
 				stat(temp,&file_info);
